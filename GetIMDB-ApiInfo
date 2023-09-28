@@ -1,0 +1,95 @@
+#!/bin/bash
+
+if [[ $1 == '' || $1 == '-h' || $1 == '--help' ]] ; then
+	cat ./GetIMDB-ApiInfo.txt
+else
+type=""
+	date=""
+	orig=""
+	opt1=$4
+
+	if [ $1 != "all" ] ; then type="title_type="$1"&"        	 		; fi
+	if [ $2 != "all" ] ; then date="release_date=$2-01-01,$2-12-31&"  	; fi
+	if [ $3 != "all" ] ; then orig="&countries="$3    		 	; fi
+
+	declare -i page=1
+	declare -i limi=$5
+	declare -i coun=$(($limi>250|$limi==0?250:$limi))
+	declare -i len=0
+	declare -i len_genr=0
+	declare -i len_name=0
+	declare -i len_year=0
+
+	key=true
+
+	while $key; do
+		link="https://www.imdb.com/search/title/?"$type$date"count="$coun"&start=$page"$orig"&"$opt1"&view=advanced"
+		curl -s -f -L $link > $HOME/.get-imdb-api-info-page.log
+		page+=$coun
+
+		echo $(date +"%d/%m/%Y %T") $link >> "$HOME/.GetIMDBApi.log"
+
+		num=$(cat $HOME/.get-imdb-api-info-page.log | grep -oP '(?<=<span>).*?(?=titles.</span>)' | sort -u)
+		echo $num $link
+		echo ""
+
+		status=$(echo $num | sed 's/.*-//g' | sed 's/ of /:/g' | sed 's/,//g')
+
+		cat $HOME/.get-imdb-api-info-page.log 	| grep '<h3 class="lister-item-header">' -A1 | grep -oP '(?<=>).*?(?=<)'							> $HOME/.get-imdb-api-info-numb.log
+		cat $HOME/.get-imdb-api-info-page.log 	| grep '<h3 class="lister-item-header">' -A3 | grep -oP '(?<=title/tt).*?(?=/)'							> $HOME/.get-imdb-api-info-code.log
+		cat $HOME/.get-imdb-api-info-page.log 	| grep '<h3 class="lister-item-header">' -A4 | grep -oP '(?<=>).*?(?=</a>)' | sed 's/^ //g' 					> $HOME/.get-imdb-api-info-name.log
+		cat $HOME/.get-imdb-api-info-page.log 	| grep '<h3 class="lister-item-header">' -A5 | grep -oP '(?<=year text-muted unbold">).*?(?=</span>)' | tr -d '(|)'		> $HOME/.get-imdb-api-info-year.log
+		cat $HOME/.get-imdb-api-info-page.log 	| grep '        <strong>' | grep -oP '(?<=>).*?(?=<)'										> $HOME/.get-imdb-api-info-note.log
+		cat $HOME/.get-imdb-api-info-page.log	| grep -A1 '<span class="genre">' | grep '</span>' | grep -oP '(?<=^).*?(?=  )'							> $HOME/.get-imdb-api-info-genr.log
+		cat $HOME/.get-imdb-api-info-page.log	| grep '<span class="runtime">' | grep -oP '(?<=>).*?(?=</span>)' | sed 's/     / /g'						> $HOME/.get-imdb-api-info-runt.log
+		cat $HOME/.get-imdb-api-info-page.log   | grep '<span class="text-muted">Votes:</span>' -A1 | grep 'data-value' | grep -oP '(?<=>).*?(?=</span>)' | tr -d 'Votes:'	> $HOME/.get-imdb-api-info-vote.log
+
+		for n in $(seq 1 $(wc -l < $HOME/.get-imdb-api-info-numb.log)); do
+			len=$(sed -n $n'p' $HOME/.get-imdb-api-info-genr.log | wc -m)+5
+			if [ $len -gt $len_genr ] ; then
+				len_genr=$len
+			fi
+
+			len=$(sed -n $n'p' $HOME/.get-imdb-api-info-name.log | wc -m)+5
+                        if [ $len -gt $len_name ] ; then
+                                len_name=$len
+                        fi
+
+			len=$(sed -n $n'p' $HOME/.get-imdb-api-info-year.log | wc -m)+5
+                        if [ $len -gt $len_year ] ; then
+                                len_year=$len
+                        fi
+		done
+
+		tab_title="%-8s%-15s%-"$len_name"s%-15s%-15s%-"$len_genr"s%-"$len_year"s%-15s\n"
+		echo -e | awk '{ printf "'$tab_title'","N°","Código","Descrição","Nota","Duração","Gênero","Ano","Votos\n"; }'
+
+		for n in $(seq 1 $(wc -l < $HOME/.get-imdb-api-info-numb.log)); do
+			numb=$(sed -n $n'p' $HOME/.get-imdb-api-info-numb.log)
+			code=$(sed -n $n'p' $HOME/.get-imdb-api-info-code.log)
+			name=$(sed -n $n'p' $HOME/.get-imdb-api-info-name.log)
+			note=$(sed -n $n'p' $HOME/.get-imdb-api-info-note.log)
+			runt=$(sed -n $n'p' $HOME/.get-imdb-api-info-runt.log)
+			genr=$(sed -n $n'p' $HOME/.get-imdb-api-info-genr.log)
+			year=$(sed -n $n'p' $HOME/.get-imdb-api-info-year.log)
+			vote=$(sed -n $n'p' $HOME/.get-imdb-api-info-vote.log)
+
+			echo -e | awk "{ printf \"$tab_title\",\"$numb\",\"$code\",\"$name\",\"$note\",\"$runt\",\"$genr\",\"$year\",\"$vote\"; }"
+		done
+
+		echo ""
+		rm $HOME/.get-imdb-api-info-*
+
+		array=(${status//:/ })
+
+		if [ $limi == 0 ] ; then
+			limi=${array[1]}
+		fi
+
+		if [[ ${array[0]} == ${array[1]} || $status != *":"* || ${array[0]} == $limi ]] ; then
+			key=false
+		fi
+
+		trap "echo; exit" INT
+	done
+fi

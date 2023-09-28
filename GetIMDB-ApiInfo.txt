@@ -1,0 +1,111 @@
+Modo de usar: GetIMDB-ApiInfo [title_type] [year] [country=us|br] [filters_and_sort-by] [lenght_list]
+
+Exemplos:
+         GetIMDB-ApiInfo all 2018 all '&groups=oscar_winner&sort=num_votes,desc' 20
+         GetIMDB-ApiInfo all all all '&keywords=hacker&sort=num_votes,desc' 20
+         GetIMDB-ApiInfo feature 2020 all '&keywords=hacker&sort=num_votes,desc'
+         GetIMDB-ApiInfo feature 2020 all '&sort=num_votes,desc' 3
+         GetIMDB-ApiInfo feature 2022 all '&genres=sci-fi&sort=num_votes,desc' 10
+         GetIMDB-ApiInfo tv_miniseries 2020 all '&sort=num_votes,desc' 10
+         GetIMDB-ApiInfo tv_series 2022 all '&sort=num_votes,desc' 10
+
+title_type:
+         title_type=feature              title_type=tv_miniseries        title_type=tv_short
+         title_type=tv_movie             title_type=documentary          title_type=podcast_series
+         title_type=tv_series            title_type=video_game           title_type=podcast_episode
+         title_type=tv_episode           title_type=short                title_type=music_video
+         title_type=tv_special           title_type=video
+
+Release Date:
+	release_date=2022-01-01,2022-12-31
+
+countries:
+	af,ax,al,dz,as,ad,ao,ai,aq,ag,ar,am,aw,au,at,az,bs,bh,bd,bb,by,be,bz,bj,bm,bt,bo,bq,ba,bw,bv,br,io,vg,bn,bg,bf,bumm,bi,kh,cm,ca,cv,ky,cf,td,cl,cn,cx,cc,co
+	km,cg,ck,cr,ci,hr,cu,cy,cz,cshh,cd,dk,dj,dm,do,ddde,ec,eg,sv,gq,er,ee,et,fk,fo,yucs,fm,fj,fi,fr,gf,pf,tf,ga,gm,ge,de,gh,gi,gr,gl,gd,gp,gu,gt,gg,gn,gw,gy,ht
+	hm,va,hn,hk,hu,is,in,id,ir,iq,ie,im,il,it,jm,jp,je,jo,kz,ke,ki,xko,xkv,kw,kg,la,lv,lb,ls,lr,ly,li,lt,lu,mo,mg,mw,my,mv,ml,mt,mh,mq,mr,mu,yt,mx,md,mc,mn,me,ms,ma,mz,mm
+	na,nr,np,nl,an,nc,nz,ni,ne,ng,nu,nf,kp,mk,vdvn,mp,no,om,pk,pw,xpi,ps,pa,pg,py,pe,ph,pl,pt,pn,pr,qa,re,ro,ru,rw,bl,sh,kn,lc,mf,pm,vc,ws,sm,st,sa,sn,rs,csxx,sc,xsi
+	sl,sg,sk,si,sb,so,za,gs,kr,suhh,es,lk,sd,sr,sj,sz,se,ch,sy,tw,tj,tz,th,tl,tg,tk,to,tt,tn,tr,tm,tc,tv,vi,ug,ua,ae,gb,us,um,uy,uz,vu,ve,vn,wf,xwg,eh,ye,xyu,zm,zw
+
+User Rating:
+	user_rating=9.0,10.0
+
+Number of Votes:
+	num_votes=1000000,2000000
+
+genres:
+         genres=action                   genres=crime                    genres=film-noir                genres=musical          genres=sci-fi           genres=western
+         genres=adventure                genres=documentary              genres=game-show                genres=mystery          genres=sport
+         genres=animation                genres=drama                    genres=history                  genres=news             genres=talk-show
+         genres=biography                genres=family                   genres=horror                   genres=reality-tv       genres=thriller
+         genres=comedy                   genres=fantasy                  genres=music                    genres=romance          genres=war
+
+groups:
+         groups=top_100                  groups=bottom_1000              groups=emmy_nominee             groups=oscar_best_director_nominees
+         groups=top_250                  groups=oscar_winner             groups=golden_globe_nominee     groups=national_film_preservation_board_winner
+         groups=top_1000                 groups=emmy_winner              groups=best_picture_winner      groups=razzie_winner
+         groups=bottom_100               groups=golden_globe_winner      groups=best_director_winner     groups=razzie_nominee
+         groups=bottom_250               groups=oscar_nominee            groups=oscar_best_picture_nominees
+
+companies:
+         companies=fox                   companies=universal
+         companies=sony                  companies=disney
+         companies=dreamworks            companies=warner
+         companies=mgm
+         companies=paramount
+
+certificates:
+         certificates=US%3AG
+         certificates=US%3APG
+         certificates=US%3APG-13
+         certificates=US%3AR
+         certificates=US%3ANC-17
+
+colors:
+         colors=color
+         colors=black_and_white
+         colors=colorized
+         colors=aces
+
+sort:
+         sort=moviemeter,asc             sort=moviemeter,desc
+         sort=alpha,asc                  sort=alpha,desc
+         sort=user_rating,asc            sort=user_rating,desc
+         sort=num_votes,asc              sort=num_votes,desc
+         sort=boxoffice_gross_us,asc     sort=boxoffice_gross_us,desc
+         sort=runtime,asc                sort=runtime,desc
+         sort=year,asc                   sort=year,desc
+         sort=release_date,asc           sort=release_date,desc
+         sort=your_rating_date,asc       sort=your_rating_date,desc
+         sort=my_ratings,asc             sort=my_ratings,desc
+
+keywords:
+         keywords=action-hero                    keywords=chick-flick                    keywords=father-son-relationship                keywords=musical-number         keywords=satire
+         keywords=alternate-history              keywords=coming-of-age                  keywords=femme-fatale                           keywords=neo-noir               keywords=self-sacrifice
+         keywords=ambiguous-ending               keywords=competition                    keywords=fictional-biography                    keywords=neorealism             keywords=serial-killer
+         keywords=americana                      keywords=conspiracy                     keywords=flashback                              keywords=ninja                  keywords=shakespeare
+         keywords=anime                          keywords=corruption                     keywords=french-new-wave                        keywords=no-background-score    keywords=shootout
+         keywords=anti-hero                      keywords=criminal-mastermind            keywords=futuristic                             keywords=no-music               keywords=show-within-a-show
+         keywords=avant-garde                    keywords=cult                           keywords=good-versus-evil                       keywords=no-opening-credits     keywords=slasher
+         keywords=b-movie                        keywords=cult-film                      keywords=heist                                  keywords=no-title-at-beginning  keywords=southern-gothic
+         keywords=bank-heist                     keywords=cyberpunk                      keywords=hero                                   keywords=nonlinear-timeline     keywords=spaghetti-western
+         keywords=based-on-book                  keywords=dark-hero                      keywords=high-school                            keywords=on-the-run             keywords=spirituality
+         keywords=based-on-play                  keywords=deus-ex-machina                keywords=husband-wife-relationship              keywords=one-against-many       keywords=spoof
+         keywords=based-on-comic                 keywords=dialogue-driven                keywords=idealism                               keywords=one-man-army           keywords=steampunk
+         keywords=based-on-comic-book            keywords=dialogue-driven-storyline      keywords=independent-film                       keywords=opening-action-scene   keywords=subjective-camera
+         keywords=based-on-novel                 keywords=directed-by-star               keywords=investigation                          keywords=organized-crime        keywords=superhero
+         keywords=based-on-novella               keywords=director-cameo                 keywords=kidnapping                             keywords=parenthood             keywords=supernatural
+         keywords=based-on-short-story           keywords=double-cross                   keywords=knight                                 keywords=parody                 keywords=surprise-ending
+         keywords=battle                         keywords=dream-sequence                 keywords=kung-fu                                keywords=plot-twist             keywords=swashbuckler
+         keywords=betrayal                       keywords=dystopia                       keywords=macguffin                              keywords=police-corruption      keywords=sword-and-sandal
+         keywords=biker                          keywords=ensemble-cast                  keywords=medieval-times                         keywords=police-detective       keywords=tech-noir
+         keywords=black-comedy                   keywords=epic                           keywords=mockumentary                           keywords=post-apocalypse        keywords=time-travel
+         keywords=blockbuster                    keywords=espionage                      keywords=monster                                keywords=postmodern             keywords=title-spoken-by-character
+         keywords=bollywood                      keywords=experimental                   keywords=mother-daughter-relationship           keywords=psychopath             keywords=told-in-flashback
+         keywords=breaking-the-fourth-wall       keywords=experimental-film              keywords=mother-son-relationship                keywords=race-against-time      keywords=vampire
+         keywords=business                       keywords=fairy-tale                     keywords=multiple-actors-playing-same-role      keywords=redemption             keywords=virtual-reality
+         keywords=caper                          keywords=famous-line                    keywords=multiple-endings                       keywords=remake                 keywords=voice-over-narration
+         keywords=car-accident                   keywords=famous-opening-theme           keywords=multiple-perspectives                  keywords=rescue                 keywords=whistleblower
+         keywords=car-chase                      keywords=famous-score                   keywords=multiple-storyline                     keywords=road-movie             keywords=wilhelm-scream
+         keywords=car-crash                      keywords=fantasy-sequence               keywords=toryline                               keywords=robbery                keywords=wuxia
+         keywords=character-name-in-title        keywords=farce                          keywords=multiple-time-frames                   keywords=robot                  keywords=zombie
+         keywords=character%27s-point-of-view-camera-shot                                keywords=father-daughter-relationship           keywords=murder                 keywords=rotoscoping
