@@ -8,9 +8,9 @@ type=""
 	orig=""
 	opt1=$4
 
-	if [ $1 != "all" ] ; then type="title_type="$1"&"        	 		; fi
-	if [ $2 != "all" ] ; then date="release_date=$2-01-01,$2-12-31&"  	; fi
-	if [ $3 != "all" ] ; then orig="&countries="$3    		 	; fi
+	if [ $1 != "all" ] ; then type="title_type="$1"&"        	 ; fi
+	if [ $2 != "all" ] ; then date="release_date=$2-01-01,$2-12-31&" ; fi
+	if [ $3 != "all" ] ; then orig="&countries="$3    		 ; fi
 
 	declare -i page=1
 	declare -i limi=$5
@@ -24,8 +24,12 @@ type=""
 
 	while $key; do
 		link="https://www.imdb.com/search/title/?"$type$date"count="$coun"&start=$page"$orig"&"$opt1"&view=advanced"
-		curl -s -f -L $link > $HOME/.get-imdb-api-info-page.log
+		curl -s -L --compressed -H "Accept-Encoding: gzip, deflate" $link > $HOME/.get-imdb-api-info-page.log
 		page+=$coun
+		len=0
+		len_genr=0
+	        len_name=0
+	        len_year=0
 
 		echo $(date +"%d/%m/%Y %T") $link >> "$HOME/.GetIMDBApi.log"
 
@@ -35,50 +39,72 @@ type=""
 
 		status=$(echo $num | sed 's/.*-//g' | sed 's/ of /:/g' | sed 's/,//g')
 
-		cat $HOME/.get-imdb-api-info-page.log 	| grep '<h3 class="lister-item-header">' -A1 | grep -oP '(?<=>).*?(?=<)'							> $HOME/.get-imdb-api-info-numb.log
-		cat $HOME/.get-imdb-api-info-page.log 	| grep '<h3 class="lister-item-header">' -A3 | grep -oP '(?<=title/tt).*?(?=/)'							> $HOME/.get-imdb-api-info-code.log
-		cat $HOME/.get-imdb-api-info-page.log 	| grep '<h3 class="lister-item-header">' -A4 | grep -oP '(?<=>).*?(?=</a>)' | sed 's/^ //g' 					> $HOME/.get-imdb-api-info-name.log
-		cat $HOME/.get-imdb-api-info-page.log 	| grep '<h3 class="lister-item-header">' -A5 | grep -oP '(?<=year text-muted unbold">).*?(?=</span>)' | tr -d '(|)'		> $HOME/.get-imdb-api-info-year.log
-		cat $HOME/.get-imdb-api-info-page.log 	| grep '        <strong>' | grep -oP '(?<=>).*?(?=<)'										> $HOME/.get-imdb-api-info-note.log
-		cat $HOME/.get-imdb-api-info-page.log	| grep -A1 '<span class="genre">' | grep '</span>' | grep -oP '(?<=^).*?(?=  )'							> $HOME/.get-imdb-api-info-genr.log
-		cat $HOME/.get-imdb-api-info-page.log	| grep '<span class="runtime">' | grep -oP '(?<=>).*?(?=</span>)' | sed 's/     / /g'						> $HOME/.get-imdb-api-info-runt.log
-		cat $HOME/.get-imdb-api-info-page.log   | grep '<span class="text-muted">Votes:</span>' -A1 | grep 'data-value' | grep -oP '(?<=>).*?(?=</span>)' | tr -d 'Votes:'	> $HOME/.get-imdb-api-info-vote.log
+		cat $HOME/.get-imdb-api-info-page.log 	| grep '<h3 class="lister-item-header">' -A1 | grep -oP '(?<=>).*?(?=<)' > $HOME/.get-imdb-api-info-numb.log
+		awk '/<div class="lister-item-content">/{n++}{print >"'$HOME/'.get-imdb-api-info" n ".log" }' $HOME/.get-imdb-api-info-page.log
 
 		for n in $(seq 1 $(wc -l < $HOME/.get-imdb-api-info-numb.log)); do
-			len=$(sed -n $n'p' $HOME/.get-imdb-api-info-genr.log | wc -m)+5
+			len=$(cat $HOME/.get-imdb-api-info$n.log | grep -A1 '<span class="genre">' | grep '</span>' | grep -oP '(?<=^).*?(?=  )' | wc -m)+5
 			if [ $len -gt $len_genr ] ; then
 				len_genr=$len
 			fi
 
-			len=$(sed -n $n'p' $HOME/.get-imdb-api-info-name.log | wc -m)+5
+			epis=$(cat $HOME/.get-imdb-api-info$n.log | grep '<small class="text-primary unbold">Episode:</small>' -A3 | grep -oP '(?<=>).*?(?=</small>)')
+                        if [ "$epis" = "Episode:" ]; then
+                                epnm=$(cat $HOME/.get-imdb-api-info$n.log | grep '<small class="text-primary unbold">Episode:</small>' -A3 | grep -oP '(?<=>).*?(?=</a>)')
+                                epye=$(cat $HOME/.get-imdb-api-info$n.log | grep '<small class="text-primary unbold">Episode:</small>' -A3 | grep -oP '(?<=>).*?(?=</span>)' | tr -d '(|)')
+                                epis="($epis $epnm - $epye)"
+                        else
+                                epis=""
+                                epnm=""
+                                epye=""
+                        fi
+
+			len=$(echo $epis | wc -m)
+			len+=$(cat $HOME/.get-imdb-api-info$n.log | grep '<h3 class="lister-item-header">' -A4 | grep -oP '(?<=>).*?(?=</a>)' | sed 's/^ //g' | wc -m)+5
                         if [ $len -gt $len_name ] ; then
                                 len_name=$len
                         fi
 
-			len=$(sed -n $n'p' $HOME/.get-imdb-api-info-year.log | wc -m)+5
+			len=$(cat $HOME/.get-imdb-api-info$n.log | grep '<h3 class="lister-item-header">' -A5 | grep -oP '(?<=year text-muted unbold">).*?(?=</span>)' | tr -d '(|)' | wc -m)+5
                         if [ $len -gt $len_year ] ; then
                                 len_year=$len
                         fi
 		done
 
-		tab_title="%-8s%-15s%-"$len_name"s%-15s%-15s%-"$len_genr"s%-"$len_year"s%-15s\n"
-		echo -e | awk '{ printf "'$tab_title'","N°","Código","Descrição","Nota","Duração","Gênero","Ano","Votos\n"; }'
+		tab_title="%-15s%-15s%-"$len_name"s%-15s%-15s%-"$len_genr"s%-"$len_year"s%-15s%-15s\n"
+		echo -e | awk '{ printf "'$tab_title'","N°","Código","Descrição","Nota","Duração","Gênero","Ano","Votos","Custo\n"; }'
 
 		for n in $(seq 1 $(wc -l < $HOME/.get-imdb-api-info-numb.log)); do
-			numb=$(sed -n $n'p' $HOME/.get-imdb-api-info-numb.log)
-			code=$(sed -n $n'p' $HOME/.get-imdb-api-info-code.log)
-			name=$(sed -n $n'p' $HOME/.get-imdb-api-info-name.log)
-			note=$(sed -n $n'p' $HOME/.get-imdb-api-info-note.log)
-			runt=$(sed -n $n'p' $HOME/.get-imdb-api-info-runt.log)
-			genr=$(sed -n $n'p' $HOME/.get-imdb-api-info-genr.log)
-			year=$(sed -n $n'p' $HOME/.get-imdb-api-info-year.log)
-			vote=$(sed -n $n'p' $HOME/.get-imdb-api-info-vote.log)
+			numb=$(cat $HOME/.get-imdb-api-info$n.log | grep '<h3 class="lister-item-header">' -A1 | grep -oP '(?<=>).*?(?=<)' | tr -d ',|.')
+			code=$(cat $HOME/.get-imdb-api-info$n.log | grep '<h3 class="lister-item-header">' -A3 | grep -oP '(?<=title/tt).*?(?=/)')
+			name=$(cat $HOME/.get-imdb-api-info$n.log | grep '<h3 class="lister-item-header">' -A4 | grep -oP '(?<=>).*?(?=</a>)' | sed 's/^ //g')
+			note=$(cat $HOME/.get-imdb-api-info$n.log | grep '        <strong>' | grep -oP '(?<=>).*?(?=<)')
+			runt=$(cat $HOME/.get-imdb-api-info$n.log | grep '<span class="runtime">' | grep -oP '(?<=>).*?(?=</span>)' | sed 's/     / /g')
+			genr=$(cat $HOME/.get-imdb-api-info$n.log | grep -A1 '<span class="genre">' | grep '</span>' | grep -oP '(?<=^).*?(?=  )')
+			year=$(cat $HOME/.get-imdb-api-info$n.log | grep '<h3 class="lister-item-header">' -A5 | grep -oP '(?<=year text-muted unbold">).*?(?=</span>)' | tr -d '(|)')
+			vote=$(cat $HOME/.get-imdb-api-info$n.log | grep '<span class="text-muted">Votes:</span>' -A1 | grep 'data-value' | grep -oP '(?<=>).*?(?=</span>)' | tr -d 'Votes:')
+			cous=$(cat $HOME/.get-imdb-api-info$n.log | grep '<span class="text-muted">Gross:</span>' -A1 | grep '<span name="nv" data-value' | grep -oP '(?<=>).*?(?=</span>)')
+			epis=$(cat $HOME/.get-imdb-api-info$n.log | grep '<small class="text-primary unbold">Episode:</small>' -A3 | grep -oP '(?<=>).*?(?=</small>)')
 
-			echo -e | awk "{ printf \"$tab_title\",\"$numb\",\"$code\",\"$name\",\"$note\",\"$runt\",\"$genr\",\"$year\",\"$vote\"; }"
+			if [ "$epis" = "Episode:" ]; then
+				epnm=$(cat $HOME/.get-imdb-api-info$n.log | grep '<small class="text-primary unbold">Episode:</small>' -A3 | grep -oP '(?<=>).*?(?=</a>)')
+				epye=$(cat $HOME/.get-imdb-api-info$n.log | grep '<small class="text-primary unbold">Episode:</small>' -A3 | grep -oP '(?<=>).*?(?=</span>)' | tr -d '(|)')
+				epis="($epis $epnm - $epye)"
+			else
+				epis=""
+				epnm=""
+				epye=""
+			fi
+
+			echo -e | awk "{ printf \"$tab_title\",\"$numb\",\"$code\",\"$name$epis\",\"$note\",\"$runt\",\"$genr\",\"$year\",\"$vote\",\"$cous\"; }"
+
+			#if [[ $6 == 'true' && !( -f $path"/All/"$code".nfo") ]] ; then
+			#	python3.10 /bin/GetIMDB-Apimkfolder $code
+			#fi
 		done
 
 		echo ""
-		rm $HOME/.get-imdb-api-info-*
+		rm $HOME/.get-imdb-api-info*
 
 		array=(${status//:/ })
 
@@ -88,8 +114,12 @@ type=""
 
 		if [[ ${array[0]} == ${array[1]} || $status != *":"* || ${array[0]} == $limi ]] ; then
 			key=false
+		else
+			echo -e "Aguarde...\n"
 		fi
 
 		trap "echo; exit" INT
 	done
+
+	echo -e "Comando concluído!\n"
 fi

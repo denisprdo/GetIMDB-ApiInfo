@@ -4,6 +4,7 @@
 
 O `GetIMDB-ApiInfo` é um script de shell que permite listar informações sobre filmes e séries a partir do site IMDb. Ele extrai detalhes sobre filmes e séries diretamente do site e exibe os resultados no terminal.
 
+![IMDb Logo](imdb_image01.png)
 
 ## Funcionalidades
 
