@@ -1,13 +1,13 @@
-Modo de usar: GetIMDB-ApiInfo [title_type] [year] [country=us|br] [filters_and_sort-by] [lenght_list]
+Modo de usar: GetIMDB-ApiInfo [title_type] [release_date] [countries] [filters_and_sort-by] [lenght_list]
 
 Exemplos:
-         GetIMDB-ApiInfo all 2018 all '&groups=oscar_winner&sort=num_votes,desc' 20
-         GetIMDB-ApiInfo all all all '&keywords=hacker&sort=num_votes,desc' 20
-         GetIMDB-ApiInfo feature 2020 all '&keywords=hacker&sort=num_votes,desc'
-         GetIMDB-ApiInfo feature 2020 all '&sort=num_votes,desc' 3
-         GetIMDB-ApiInfo feature 2022 all '&genres=sci-fi&sort=num_votes,desc' 10
-         GetIMDB-ApiInfo tv_miniseries 2020 all '&sort=num_votes,desc' 10
-         GetIMDB-ApiInfo tv_series 2022 all '&sort=num_votes,desc' 10
+         GetIMDB-ApiInfo all 2018 all 'groups=oscar_winner&sort=num_votes,desc' 20
+         GetIMDB-ApiInfo all all all 'keywords=hacker&sort=num_votes,desc' 20
+         GetIMDB-ApiInfo feature 2020 all 'keywords=hacker&sort=num_votes,desc'
+         GetIMDB-ApiInfo feature 2020 all 'sort=num_votes,desc' 3
+         GetIMDB-ApiInfo feature 2022 all 'genres=sci-fi&sort=num_votes,desc' 10
+         GetIMDB-ApiInfo tv_miniseries 2020 all 'sort=num_votes,desc' 10
+         GetIMDB-ApiInfo tv_series 2022 all 'sort=num_votes,desc' 10
 
 title_type:
          title_type=feature              title_type=tv_miniseries        title_type=tv_short

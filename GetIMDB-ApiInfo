@@ -3,7 +3,7 @@
 if [[ $1 == '' || $1 == '-h' || $1 == '--help' ]] ; then
 	cat ./GetIMDB-ApiInfo.txt
 else
-type=""
+	type=""
 	date=""
 	orig=""
 	opt1=$4
@@ -15,96 +15,99 @@ type=""
 	declare -i page=1
 	declare -i limi=$5
 	declare -i coun=$(($limi>250|$limi==0?250:$limi))
-	declare -i len=0
+	declare -i len_cols=0
 	declare -i len_genr=0
 	declare -i len_name=0
 	declare -i len_year=0
+	declare -i len_epis=0
 
 	key=true
 
 	while $key; do
 		link="https://www.imdb.com/search/title/?"$type$date"count="$coun"&start=$page"$orig"&"$opt1"&view=advanced"
-		curl -s -L --compressed -H "Accept-Encoding: gzip, deflate" $link > $HOME/.get-imdb-api-info-page.log
+		hash1=$(echo $link | md5sum | tr -d '  -')
+		hash2=$(echo $link$(date +"%d/%m/%Y %T") | md5sum | tr -d '  -')
+
+		trap "echo -e '\nSaindo...' ; rm $HOME/$hash2* ; exit" SIGINT
+
 		page+=$coun
-		len=0
+		len_cols=0
 		len_genr=0
-	        len_name=0
-	        len_year=0
+		len_name=0
+		len_year=0
+		len_epis=0
 
 		echo $(date +"%d/%m/%Y %T") $link >> "$HOME/.GetIMDBApi.log"
 
-		num=$(cat $HOME/.get-imdb-api-info-page.log | grep -oP '(?<=<span>).*?(?=titles.</span>)' | sort -u)
+		if [[ !( -f "$HOME/$hash1.html") || !(-s "$HOME/$hash1.html") ]] ; then
+			trap 'continue' SIGINT
+			echo "Baixando dados..."
+			curl -s -L --compressed -H "Accept-Encoding: gzip, deflate" $link > "$HOME/$hash1.html" && echo "Dados baixados com sucesso!"
+			trap SIGINT
+		fi
+
+		num=$(cat $HOME/$hash1.html | grep -oP '(?<=<span>).*?(?=titles.</span>)' | sort -u)
 		echo $num $link
 		echo ""
 
 		status=$(echo $num | sed 's/.*-//g' | sed 's/ of /:/g' | sed 's/,//g')
 
-		cat $HOME/.get-imdb-api-info-page.log 	| grep '<h3 class="lister-item-header">' -A1 | grep -oP '(?<=>).*?(?=<)' > $HOME/.get-imdb-api-info-numb.log
-		awk '/<div class="lister-item-content">/{n++}{print >"'$HOME/'.get-imdb-api-info" n ".log" }' $HOME/.get-imdb-api-info-page.log
+		cat $HOME/$hash1.html | grep -A1 '<h3 class="lister-item-header">' | grep -oP '(?<=>).*?(?=<)' 						> $HOME/$hash2-numb.html
+		cat $HOME/$hash1.html | grep -A4 '<h3 class="lister-item-header">' | grep -oP '(?<=>).*?(?=</a>)' | sed 's/^ //g' 				> $HOME/$hash2-len-name.html
+		cat $HOME/$hash1.html | grep -A1 '<span class="genre">' | grep '</span>' | grep -oP '(?<=^).*?(?=  )' 					> $HOME/$hash2-len-genr.html
+		cat $HOME/$hash1.html | grep -A5 '<h3 class="lister-item-header">' | grep -oP '(?<=year text-muted unbold">).*?(?=</span>)' | tr -d '(|)'	> $HOME/$hash2-len-year.html
+		cat $HOME/$hash1.html | grep '<small class="text-primary unbold">Episode:</small>' -A3 | grep -oP '(?<=>).*?(?=</a>)'			> $HOME/$hash2-len-epis.html
 
-		for n in $(seq 1 $(wc -l < $HOME/.get-imdb-api-info-numb.log)); do
-			len=$(cat $HOME/.get-imdb-api-info$n.log | grep -A1 '<span class="genre">' | grep '</span>' | grep -oP '(?<=^).*?(?=  )' | wc -m)+5
-			if [ $len -gt $len_genr ] ; then
-				len_genr=$len
-			fi
+		awk '{print length}' $HOME/$hash2-len-name.html 		> $HOME/$hash2-len-name1.html
+		awk '{print length}' $HOME/$hash2-len-name.html | sort -nr > $HOME/$hash2-len-name2.html
+		awk '{print length}' $HOME/$hash2-len-genr.html | sort -nr > $HOME/$hash2-len-genr2.html
+		awk '{print length}' $HOME/$hash2-len-year.html | sort -nr > $HOME/$hash2-len-year2.html
 
-			epis=$(cat $HOME/.get-imdb-api-info$n.log | grep '<small class="text-primary unbold">Episode:</small>' -A3 | grep -oP '(?<=>).*?(?=</small>)')
-                        if [ "$epis" = "Episode:" ]; then
-                                epnm=$(cat $HOME/.get-imdb-api-info$n.log | grep '<small class="text-primary unbold">Episode:</small>' -A3 | grep -oP '(?<=>).*?(?=</a>)')
-                                epye=$(cat $HOME/.get-imdb-api-info$n.log | grep '<small class="text-primary unbold">Episode:</small>' -A3 | grep -oP '(?<=>).*?(?=</span>)' | tr -d '(|)')
-                                epis="($epis $epnm - $epye)"
-                        else
-                                epis=""
-                                epnm=""
-                                epye=""
-                        fi
+		len_name=$(sed '1!d' $HOME/$hash2-len-name2.html)+3
+		len_genr=$(sed '1!d' $HOME/$hash2-len-genr2.html)+5
+		len_year=$(sed '1!d' $HOME/$hash2-len-year2.html)+5
+		len_epis=0
 
-			len=$(echo $epis | wc -m)
-			len+=$(cat $HOME/.get-imdb-api-info$n.log | grep '<h3 class="lister-item-header">' -A4 | grep -oP '(?<=>).*?(?=</a>)' | sed 's/^ //g' | wc -m)+5
-                        if [ $len -gt $len_name ] ; then
-                                len_name=$len
-                        fi
+		awk '/<div class="lister-item-content">/{n++}{print >"'$HOME/$hash2'-" n ".html" }' $HOME/$hash1.html
 
-			len=$(cat $HOME/.get-imdb-api-info$n.log | grep '<h3 class="lister-item-header">' -A5 | grep -oP '(?<=year text-muted unbold">).*?(?=</span>)' | tr -d '(|)' | wc -m)+5
-                        if [ $len -gt $len_year ] ; then
-                                len_year=$len
-                        fi
-		done
+		if [ $1 != 'feature' ] ; then
+			for n in $(seq 1 $(wc -l < $HOME/$hash2-numb.html)); do
+				epis=$(cat $HOME/$hash2-$n.html | grep '<small class="text-primary unbold">Episode:</small>' -A3 | grep -oP '(?<=>).*?(?=</small>)')
+	                        if [ "$epis" = "Episode:" ]; then
+	                                epnm=$(cat $HOME/$hash2-$n.html | grep '<small class="text-primary unbold">Episode:</small>' -A3 | grep -oP '(?<=>).*?(?=</a>)')
+	                                epye=$(cat $HOME/$hash2-$n.html | grep '<small class="text-primary unbold">Episode:</small>' -A3 | grep -oP '(?<=>).*?(?=</span>)' | tr -d '  ' | tr -d '(|)')
+	                                epis="($epis $epnm - $epye)"
+
+					sed -i $n"s/.*/$(sed $n'!d' $HOME/$hash2-len-name.html)$epis/" $HOME/$hash2-len-name.html
+
+					len_cols=$(sed $n'!d' $HOME/$hash2-len-name.html | wc -m)+3
+					if [ $len_cols -gt $len_name ] ; then
+	                                        len_name=$len_cols
+	                                fi
+	                        fi
+			done
+		fi
 
 		tab_title="%-15s%-15s%-"$len_name"s%-15s%-15s%-"$len_genr"s%-"$len_year"s%-15s%-15s\n"
-		echo -e | awk '{ printf "'$tab_title'","N°","Código","Descrição","Nota","Duração","Gênero","Ano","Votos","Custo\n"; }'
 
-		for n in $(seq 1 $(wc -l < $HOME/.get-imdb-api-info-numb.log)); do
-			numb=$(cat $HOME/.get-imdb-api-info$n.log | grep '<h3 class="lister-item-header">' -A1 | grep -oP '(?<=>).*?(?=<)' | tr -d ',|.')
-			code=$(cat $HOME/.get-imdb-api-info$n.log | grep '<h3 class="lister-item-header">' -A3 | grep -oP '(?<=title/tt).*?(?=/)')
-			name=$(cat $HOME/.get-imdb-api-info$n.log | grep '<h3 class="lister-item-header">' -A4 | grep -oP '(?<=>).*?(?=</a>)' | sed 's/^ //g')
-			note=$(cat $HOME/.get-imdb-api-info$n.log | grep '        <strong>' | grep -oP '(?<=>).*?(?=<)')
-			runt=$(cat $HOME/.get-imdb-api-info$n.log | grep '<span class="runtime">' | grep -oP '(?<=>).*?(?=</span>)' | sed 's/     / /g')
-			genr=$(cat $HOME/.get-imdb-api-info$n.log | grep -A1 '<span class="genre">' | grep '</span>' | grep -oP '(?<=^).*?(?=  )')
-			year=$(cat $HOME/.get-imdb-api-info$n.log | grep '<h3 class="lister-item-header">' -A5 | grep -oP '(?<=year text-muted unbold">).*?(?=</span>)' | tr -d '(|)')
-			vote=$(cat $HOME/.get-imdb-api-info$n.log | grep '<span class="text-muted">Votes:</span>' -A1 | grep 'data-value' | grep -oP '(?<=>).*?(?=</span>)' | tr -d 'Votes:')
-			cous=$(cat $HOME/.get-imdb-api-info$n.log | grep '<span class="text-muted">Gross:</span>' -A1 | grep '<span name="nv" data-value' | grep -oP '(?<=>).*?(?=</span>)')
-			epis=$(cat $HOME/.get-imdb-api-info$n.log | grep '<small class="text-primary unbold">Episode:</small>' -A3 | grep -oP '(?<=>).*?(?=</small>)')
+		echo -e | awk '{ printf "'$tab_title'","N°","Código","Descrição","Nota","Duração","Gênero","Ano","Votos","Baixado\n"; }'
 
-			if [ "$epis" = "Episode:" ]; then
-				epnm=$(cat $HOME/.get-imdb-api-info$n.log | grep '<small class="text-primary unbold">Episode:</small>' -A3 | grep -oP '(?<=>).*?(?=</a>)')
-				epye=$(cat $HOME/.get-imdb-api-info$n.log | grep '<small class="text-primary unbold">Episode:</small>' -A3 | grep -oP '(?<=>).*?(?=</span>)' | tr -d '(|)')
-				epis="($epis $epnm - $epye)"
-			else
-				epis=""
-				epnm=""
-				epye=""
-			fi
+		for n in $(seq 1 $(wc -l < $HOME/$hash2-numb.html)); do
+			numb=$(cat $HOME/$hash2-$n.html | grep '<h3 class="lister-item-header">' -A1 | grep -oP '(?<=>).*?(?=<)' | tr -d ',|.')
+			code=$(cat $HOME/$hash2-$n.html | grep '<h3 class="lister-item-header">' -A3 | grep -oP '(?<=title/tt).*?(?=/)')
+			name=$(sed $n'!d' $HOME/$hash2-len-name.html)
+			note=$(cat $HOME/$hash2-$n.html | grep '        <strong>' | grep -oP '(?<=>).*?(?=<)')
+			runt=$(cat $HOME/$hash2-$n.html | grep '<span class="runtime">' | grep -oP '(?<=>).*?(?=</span>)' | sed 's/     / /g')
+			genr=$(cat $HOME/$hash2-$n.html | grep -A1 '<span class="genre">' | grep '</span>' | grep -oP '(?<=^).*?(?=  )')
+			year=$(cat $HOME/$hash2-$n.html | grep '<h3 class="lister-item-header">' -A5 | grep -oP '(?<=year text-muted unbold">).*?(?=</span>)' | tr -d '(|)')
+			vote=$(cat $HOME/$hash2-$n.html | grep '<span class="text-muted">Votes:</span>' -A1 | grep 'data-value' | grep -oP '(?<=>).*?(?=</span>)' | tr -d 'Votes:')
+			cous=$(cat $HOME/$hash2-$n.html | grep '<span class="text-muted">Gross:</span>' -A1 | grep '<span name="nv" data-value' | grep -oP '(?<=>).*?(?=</span>)')
+			down=""
 
-			echo -e | awk "{ printf \"$tab_title\",\"$numb\",\"$code\",\"$name$epis\",\"$note\",\"$runt\",\"$genr\",\"$year\",\"$vote\",\"$cous\"; }"
-
-			#if [[ $6 == 'true' && !( -f $path"/All/"$code".nfo") ]] ; then
-			#	python3.10 /bin/GetIMDB-Apimkfolder $code
-			#fi
+			echo -e | awk "{ printf \"$tab_title\",\"$numb\",\"$code\",\"$name\",\"$note\",\"$runt\",\"$genr\",\"$year\",\"$vote\",\"$down\"; }"
 		done
 
 		echo ""
-		rm $HOME/.get-imdb-api-info*
 
 		array=(${status//:/ })
 
@@ -118,8 +121,11 @@ type=""
 			echo -e "Aguarde...\n"
 		fi
 
-		trap "echo; exit" INT
+		rm $HOME/$hash2-*
+
+		coun=$(($page+250>$limi?$limi-$page+1:250))
 	done
 
+	rm $HOME/$hash1*
 	echo -e "Comando concluído!\n"
 fi
